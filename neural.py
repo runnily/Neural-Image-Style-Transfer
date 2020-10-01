@@ -132,8 +132,10 @@ def MSE(matrix_content, matrix_generated):
 
 
 
-def get_layer(c_image, s_image, g_image, layer_name):
+def get_layer(c_image, s_image, g_image):
     """
+        Description:
+            This returns the activation of the input image.
         Args:
             image (<class 'numpy.ndarray'>): A given image array
             layer_name (str): A given layer name within the cnn model
@@ -141,17 +143,35 @@ def get_layer(c_image, s_image, g_image, layer_name):
 
             <class 'numpy.ndarray'> :
     """
-    tensor_image = tf.concat([c_image, s_image, g_image], axis = 0)
-    #Below is the temporally builds a temporally model with the output corresponding to a specfic layer_name.
-    #layer = tf.keras.Model(inputs=MODEL.inputs, outputs=MODEL.get_layer(layer_name).output) #Sets the activations.
-    layer = tf.keras.Model(inputs=MODEL.inputs, outputs=OUTPUT_DICT)
-    feature = layer(tensor_image)
-    feature = feature[layer_name]
-    #This will return the activations of the function
+    tensor_image = tf.concat([c_image, s_image, g_image], axis = 0) #put images within one array
+    layer = tf.keras.Model(inputs=MODEL.inputs, outputs=OUTPUT_DICT) #create a model
+    feature = layer(tensor_image) #This will return the activations of the function
     return feature
 
+def get_feature(c_image, s_image, g_image):
+    """
+        Description:
+            This function takes in the tensor repersentations c_image, s_image and g_image
+            and returns their feauture activations.
+        Args:
+            c_image (): This is a tensor repersentation of the content image
+            s_image (): This is a tensor repersentation of the style image
+            g_image (): This is a tensor repersentation of the generated image
+        Returns:
+            : features of content image
+            : features of style image
+            : features of generated image
 
-def content_loss_function(c_image, s_image, g_image, layer_name):
+
+    """
+    layer_feature = get_layer(c_image, s_image, g_image)
+    c_feature = layer_feature[0,:,:,:]
+    s_feature = layer_feature[1,:,:,:]
+    g_feature = layer_feature[2,:,:,:]
+    return c_feature, s_feature, g_feature
+
+
+def content_loss_function(c_feature, g_feature):
     #todo need to change doc string as type was changed
     """
         Args:
@@ -163,9 +183,6 @@ def content_loss_function(c_image, s_image, g_image, layer_name):
             to the generated image
     """
     WEIGHT = 0.5
-    layer_feature = get_layer(c_image, s_image, g_image, layer_name)
-    c_feature = layer_feature[0,:,:,:]
-    g_feature = layer_feature[2,:,:,:]
     loss = MSE(g_feature, c_feature)
     return WEIGHT*loss
 
@@ -187,7 +204,7 @@ def gram_matrix(tensor):
 
 
 
-def style_loss_function(c_image,s_image, g_image, layer_name):
+def style_loss_function(s_feature, g_feature):
     """
         Args:
             c_image_path (str): To take the style image path
@@ -197,11 +214,6 @@ def style_loss_function(c_image,s_image, g_image, layer_name):
             to the generated image. A high integer denotes the content is not similar
             to the generated image
     """
-
-    layer_feature = get_layer(c_image, s_image, g_image, layer_name)
-    s_feature = layer_feature[1,:,:,:]
-    g_feature = layer_feature[2,:,:,:]
-
 
     #finding gram matrix of s and g image from perticular layer
     generated_gram = gram_matrix(g_feature)
@@ -221,18 +233,24 @@ def total_loss_function(c_image,s_image,g_image,alpha,beta):
         Returns:
             int: The totoal loss of style and content.
     """
-    style_loss = 0
-    content_loss = content_loss_function(c_image, s_image, g_image, CONTENT_LAYERS[0])
-    for layer in STYLE_LAYERS:
-        style_loss += (style_loss_function(c_image,s_image, g_image, layer))
+    c_feature, s_feature, g_feature = get_feature(c_image, s_image, g_image) 
+    content_layer = CONTENT_LAYERS[0] 
+    #This will get features from a particular layer (content_layer)
+    c_feature = c_feature[content_layer]
+    g_feature = g_feature[content_layer]
 
-    #noramalization
+    style_loss = 0
+    content_loss = content_loss_function(c_feature, g_feature)
+    for layer in STYLE_LAYERS:
+        s_feature = s_feature[layer]
+        g_feature = g_feature[layer]
+        style_loss += (style_loss_function(s_feature, g_feature))
+
     content_loss *= alpha
     style_loss *= beta
 
     #total loss
     loss = style_loss + content_loss
-
     return loss
 
 def gradient_total_loss(c_image, s_image, g_image, alpha, beta):
