@@ -145,7 +145,6 @@ def get_layer(c_image, s_image, g_image, layer_name):
     """
     tensor_image = tf.concat([c_image, s_image, g_image], axis = 0) #put images within one array
     layer = tf.keras.Model(inputs=MODEL.inputs, outputs=MODEL.get_layer(layer_name).output)
-    #layer = tf.keras.Model(inputs=MODEL.inputs, outputs=OUTPUT_DICT) #create a model
     feature = layer(tensor_image) #This will return the activations of the function
     return feature
 
@@ -282,7 +281,7 @@ def regression_total_loss(c_image, s_image, g_image, alpha, beta):
         Returns 
 
     """
-    opt = optimizer(0.2)
+    opt = optimizer(5)
     g_image  = tf.Variable(g_image) 
     iteration = 8000
     for _ in range(iteration+1):
@@ -310,12 +309,11 @@ def optimizer(learning_rate):
 
 if __name__ == "__main__":
     MODEL = VGG19()
-    OUTPUT_DICT = dict([(layer.name, layer.output) for layer in MODEL.layers])
+
     #Content representation on layer ‘conv4 2’
-
     CONTENT_LAYERS = ['block4_conv2'] 
-    #Style representations on layers ‘conv1 1’, ‘conv2 1’, ‘conv3 1’, ‘conv4 1’ and ‘conv5 1’ 
 
+    #Style representations on layers ‘conv1 1’, ‘conv2 1’, ‘conv3 1’, ‘conv4 1’ and ‘conv5 1’ 
     STYLE_LAYERS = ['block1_conv1',
                 'block2_conv1',
                 'block3_conv1',
