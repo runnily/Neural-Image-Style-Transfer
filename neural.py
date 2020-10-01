@@ -15,9 +15,9 @@ import matplotlib.image as mpimg
 from numpy import array
 import tensorflow as tf
 import tensorflow.keras.preprocessing.image as img
-from tensorflow.keras.applications.vgg16 import decode_predictions
-from tensorflow.keras.applications.vgg16 import VGG16
-from tensorflow.keras.applications.vgg16 import preprocess_input
+from tensorflow.keras.applications.vgg19 import decode_predictions
+from tensorflow.keras.applications.vgg19 import VGG19
+from tensorflow.keras.applications.vgg19 import preprocess_input
 
 
 def aspect_ratio(image_path):
@@ -132,7 +132,7 @@ def MSE(matrix_content, matrix_generated):
 
 
 
-def get_layer(c_image, s_image, g_image):
+def get_layer(c_image, s_image, g_image, layer_name):
     """
         Description:
             This returns the activation of the input image.
@@ -144,11 +144,12 @@ def get_layer(c_image, s_image, g_image):
             <class 'numpy.ndarray'> :
     """
     tensor_image = tf.concat([c_image, s_image, g_image], axis = 0) #put images within one array
-    layer = tf.keras.Model(inputs=MODEL.inputs, outputs=OUTPUT_DICT) #create a model
+    layer = tf.keras.Model(inputs=MODEL.inputs, outputs=MODEL.get_layer(layer_name).output)
+    #layer = tf.keras.Model(inputs=MODEL.inputs, outputs=OUTPUT_DICT) #create a model
     feature = layer(tensor_image) #This will return the activations of the function
     return feature
 
-def get_feature(c_image, s_image, g_image):
+def get_feature(c_image, s_image, g_image, layer_name):
     """
         Description:
             This function takes in the tensor repersentations c_image, s_image and g_image
@@ -164,10 +165,10 @@ def get_feature(c_image, s_image, g_image):
 
 
     """
-    layer_feature = get_layer(c_image, s_image, g_image)
-    c_feature = layer_feature[0,:,:,:]
-    s_feature = layer_feature[1,:,:,:]
-    g_feature = layer_feature[2,:,:,:]
+    layer_feature = get_layer(c_image, s_image, g_image, layer_name)
+    c_feature = layer_feature[0, :, :, :]
+    s_feature = layer_feature[1, :, :, :]
+    g_feature = layer_feature[2, :, :, :]
     return c_feature, s_feature, g_feature
 
 
@@ -233,17 +234,13 @@ def total_loss_function(c_image,s_image,g_image,alpha,beta):
         Returns:
             int: The totoal loss of style and content.
     """
-    c_feature, s_feature, g_feature = get_feature(c_image, s_image, g_image) 
-    content_layer = CONTENT_LAYERS[0] 
-    #This will get features from a particular layer (content_layer)
-    c_feature = c_feature[content_layer]
-    g_feature = g_feature[content_layer]
+    content_layer = CONTENT_LAYERS[0]
+    c_feature, s_feature, g_feature = get_feature(c_image, s_image, g_image, content_layer) 
 
     style_loss = 0
     content_loss = content_loss_function(c_feature, g_feature)
     for layer in STYLE_LAYERS:
-        s_feature = s_feature[layer]
-        g_feature = g_feature[layer]
+        c_feature, s_feature, g_feature = get_feature(c_image, s_image, g_image, layer) 
         style_loss += (style_loss_function(s_feature, g_feature))
 
     content_loss *= alpha
@@ -285,7 +282,7 @@ def regression_total_loss(c_image, s_image, g_image, alpha, beta):
         Returns 
 
     """
-    opt = optimizer(0.2, 0.9, 0.999)
+    opt = optimizer(0.2)
     g_image  = tf.Variable(g_image) 
     iteration = 8000
     for _ in range(iteration+1):
@@ -297,7 +294,7 @@ def regression_total_loss(c_image, s_image, g_image, alpha, beta):
             save_image(fname, g_image.numpy())
 
 
-def optimizer(learning_rate, beta1, beta2):
+def optimizer(learning_rate):
     """
         Description:
             This is used to return an optimizer
@@ -308,13 +305,17 @@ def optimizer(learning_rate, beta1, beta2):
         Returns:
 
     """
-    adam = tf.keras.optimizers.Adam(learning_rate=learning_rate, beta_1=beta1, beta_2=beta2)
+    adam = tf.keras.optimizers.Adam(learning_rate=learning_rate)
     return adam
 
 if __name__ == "__main__":
-    MODEL = VGG16()
+    MODEL = VGG19()
     OUTPUT_DICT = dict([(layer.name, layer.output) for layer in MODEL.layers])
-    CONTENT_LAYERS = ['block5_conv2']
+    #Content representation on layer ‘conv4 2’
+
+    CONTENT_LAYERS = ['block4_conv2'] 
+    #Style representations on layers ‘conv1 1’, ‘conv2 1’, ‘conv3 1’, ‘conv4 1’ and ‘conv5 1’ 
+
     STYLE_LAYERS = ['block1_conv1',
                 'block2_conv1',
                 'block3_conv1',
