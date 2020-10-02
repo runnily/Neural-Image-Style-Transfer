@@ -235,6 +235,7 @@ def total_loss_function(c_image,s_image,g_image,alpha,beta):
     """
     content_layer = CONTENT_LAYERS[0]
     c_feature, s_feature, g_feature = get_feature(c_image, s_image, g_image, content_layer) 
+    content_loss = content_loss_function(c_feature, g_feature)
 
     style_loss = 0
     content_loss = content_loss_function(c_feature, g_feature)
@@ -281,7 +282,7 @@ def regression_total_loss(c_image, s_image, g_image, alpha, beta):
         Returns 
 
     """
-    opt = optimizer(5)
+    opt = optimizer(10)
     g_image  = tf.Variable(g_image) 
     iteration = 8000
     for _ in range(iteration+1):
@@ -326,8 +327,8 @@ if __name__ == "__main__":
     IMG_WIDTH = 224
     IMG_HEIGHT = 224 #aspect_ratio(image_path) optional if you want to apply an aspect path
     CHANNEL = 3
-    ALPHA = 1e-5 #content weight
-    BETA = 1e-1 #style weight
+    ALPHA = 0.02 #content weight
+    BETA = 4.5 #style weight
 
     c_image, g_image, s_image = tensor_inputs(image_path, noise_path, style_path)
    
