@@ -327,8 +327,8 @@ if __name__ == "__main__":
     IMG_WIDTH = 224
     IMG_HEIGHT = 224 #aspect_ratio(image_path) optional if you want to apply an aspect path
     CHANNEL = 3
-    ALPHA = 0.02 #content weight
-    BETA = 4.5 #style weight
+    ALPHA = 1e-5 #content weight
+    BETA = 1e-1 #style weight
 
     c_image, g_image, s_image = tensor_inputs(image_path, noise_path, style_path)
    
