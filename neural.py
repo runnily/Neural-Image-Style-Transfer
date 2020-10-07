@@ -241,7 +241,7 @@ def total_loss_function(c_image,s_image,g_image,alpha,beta):
     content_loss = content_loss_function(c_feature, g_feature)
     for layer in STYLE_LAYERS:
         c_feature, s_feature, g_feature = get_feature(c_image, s_image, g_image, layer) 
-        style_loss += (style_loss_function(s_feature, g_feature))
+        style_loss += style_loss_function(s_feature, g_feature)
 
     content_loss *= alpha
     style_loss *= beta
@@ -327,8 +327,12 @@ if __name__ == "__main__":
     IMG_WIDTH = 224
     IMG_HEIGHT = 224 #aspect_ratio(image_path) optional if you want to apply an aspect path
     CHANNEL = 3
-    ALPHA = 1e-5 #content weight
-    BETA = 1e-1 #style weight
+
+    ALPHA = 1e-3 #content weight
+    BETA = 1e-2 #style weight
+
+    '''ALPHA = 1e-5 #content weight
+    BETA = 1e-1 #style weight'''
 
     c_image, g_image, s_image = tensor_inputs(image_path, noise_path, style_path)
    
