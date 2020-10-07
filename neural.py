@@ -115,7 +115,7 @@ def save_image(file_name, array_image):
             file_name (string): This takes in the given file name
             array_image (): This takes in the given array
     """
-    file_name = "output/{}".format(file_name)
+    file_name = "output/utils/{}".format(file_name)
     img.save_img(file_name, deprocess_img(array_image))
     return True
 
@@ -282,7 +282,7 @@ def regression_total_loss(c_image, s_image, g_image, alpha, beta):
         Returns 
 
     """
-    opt = optimizer(10)
+    opt = optimizer(0.5)
     g_image  = tf.Variable(g_image) 
     iteration = 8000
     for _ in range(iteration+1):
@@ -312,7 +312,7 @@ if __name__ == "__main__":
     MODEL = VGG19()
 
     #Content representation on layer ‘conv4 2’
-    CONTENT_LAYERS = ['block4_conv2'] 
+    CONTENT_LAYERS = ['block5_conv2'] 
 
     #Style representations on layers ‘conv1 1’, ‘conv2 1’, ‘conv3 1’, ‘conv4 1’ and ‘conv5 1’ 
     STYLE_LAYERS = ['block1_conv1',
@@ -320,7 +320,6 @@ if __name__ == "__main__":
                 'block3_conv1',
                 'block4_conv1',
                 'block5_conv1']
-
     image_path = "content.jpg"
     noise_path = "content.jpg"
     style_path = "style.jpg"
@@ -328,7 +327,7 @@ if __name__ == "__main__":
     IMG_HEIGHT = 224 #aspect_ratio(image_path) optional if you want to apply an aspect path
     CHANNEL = 3
 
-    ALPHA = 1e-3 #content weight
+    ALPHA = 1e3 #content weight
     BETA = 1e-2 #style weight
 
     '''ALPHA = 1e-5 #content weight
